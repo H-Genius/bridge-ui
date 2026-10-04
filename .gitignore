@@ -1,0 +1,38 @@
+# ── 依赖与构建产物 ──
+node_modules/
+dist/
+dist-ssr/
+build/
+
+# ── 工具工作目录（含会话数据，不提交）──
+.reasonix/
+
+# ── 工具配置文件（含本机路径与历史命令，不提交）──
+reasonix.toml
+
+# ── 环境变量：只提交 .env.example ──
+.env
+.env.*
+!.env.example
+
+# ── 编辑器 ──
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── 系统 ──
+.DS_Store
+Thumbs.db
+
+# ── 日志 ──
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── 临时文件 ──
+*.tmp
+*.bak

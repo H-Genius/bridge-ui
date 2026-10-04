@@ -1,0 +1,340 @@
+/**
+ * 全局样式 —— Tailwind v4（CSS-first 配置）
+ * ═══════════════════════════════════════════════════════════
+ *
+ * ★★ 你要改观感，先改这里的变量 ★★
+ *
+ * Tailwind v4 不需要 tailwind.config.js，主题直接在 CSS 里用 @theme 定义。
+ * 好处：所有设计令牌集中在一个文件，改配色只动这里。
+ *
+ * 注意：天空颜色 / 亮度 / 星速这些 **由 JS 按状态覆盖** 的变量，
+ *       不放在 @theme 里（那是静态的），放在 :root 里。
+ */
+
+@import 'tailwindcss';
+
+/* ─────────── 静态设计令牌（Tailwind 能用） ─────────── */
+
+@theme {
+  /* 三种基调：哑光黑 / 钛灰 / 陶瓷白 */
+  --color-matte: #0b0d10;
+  --color-matte-deep: #05070a;
+  --color-titanium: #3a3d42;
+  --color-titanium-light: #6b7078;
+  --color-ceramic: #f2f1ed;
+  --color-ceramic-dim: #c9c7c1;
+
+  /* 点缀色 —— 只在「标记当前状态」时用，不要到处洒 */
+  --color-accent: #4fc3f7;
+
+  /* 圆角 */
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 8px;
+
+  /* 字体 */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+/* ─────────── 动态变量（JS 按环境状态覆盖） ─────────── */
+
+:root {
+  /* 天空三色 */
+  --sky-a: #0a1420;
+  --sky-b: #0d1b2a;
+  --sky-c: #060a12;
+
+  /* 亮度与星点（CSS 降级时用） */
+  --sky-brightness: 1;
+  --star-opacity: 0.55;
+  --star-duration: 160s;
+  --planet-opacity: 0;
+  --station-opacity: 0;
+
+  /* 星云双色与强度 —— 由 JS 覆盖 */
+  --nebula-a: #1b3a63;
+  --nebula-b: #2d5f8a;
+  --nebula-strength: 0.6;
+
+  /* 尘埃粒子密度、警示脉冲、辉光强度 */
+  --dust-density: 0.45;
+  --alert-pulse: 0;
+  --bloom-strength: 0.9;
+
+  /* 天体的 CSS 兜底位置 */
+  --body-x: 71%;
+  --body-y: 59%;
+
+  /* 点缀色的半透明版本，由 JS 覆盖 */
+  --accent-dim: rgba(79, 195, 247, 0.35);
+
+  /* ★ 磨砂参数
+     放开到 18px：这是「浅白色半透明磨砂面板」的厚度来源 */
+  --blur: 18px;
+
+  /* ★ 过渡曲线 —— 这是「顺滑感」的秘诀 */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur: 0.4s;
+}
+
+/* ─────────── 基础 ─────────── */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-matte);
+  color: rgba(255, 255, 255, 0.94);
+  overflow: hidden;
+  /* ⚠️ 注意：这里刻意不加 filter。
+     加了会让 canvas 走软件合成，3D 直接掉帧。
+     亮度改由 3D 自己控制（曝光）+ 画布的 opacity。 */
+}
+
+/* ─────────── 磨砂面板（复用类） ─────────── */
+
+@utility glass {
+  background: rgba(255, 255, 255, 0.07);
+  /* ★ 模糊的是静态渐变层（scrim），不是 3D 画布 —— 性能成本几乎为零 */
+  backdrop-filter: blur(var(--blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: var(--radius-md);
+  /* 双层阴影制造厚度：外投影 + 内高光 */
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  transition:
+    background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+/* ─────────── 舰桥控制台：哑光黑 / 钛灰 / 陶瓷白 大块对比 ─────────── */
+
+/* 一体化控制台底座：哑光黑到钛灰的自然过渡 */
+@utility console-base {
+  background:
+    linear-gradient(180deg, rgba(20, 23, 28, 0.92) 0%, rgba(11, 13, 16, 0.96) 100%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03), transparent 40%);
+  backdrop-filter: blur(calc(var(--blur) * 1.6)) saturate(120%);
+  -webkit-backdrop-filter: blur(calc(var(--blur) * 1.6)) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  /* 顶部一条极细的亮边，让控制台「压」在画面上 */
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.08),
+    0 -24px 60px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* 陶瓷白仪表块 —— 与哑光黑形成大块明暗对比 */
+@utility gauge-ceramic {
+  background: linear-gradient(165deg, #f4f3ef 0%, #d9d7d1 55%, #b9b7b1 100%);
+  color: #14161a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* 钛灰仪表块 —— 明暗之间的过渡档 */
+@utility gauge-titanium {
+  background: linear-gradient(165deg, rgba(74, 78, 85, 0.85) 0%, rgba(40, 43, 49, 0.9) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* ─────────── 悬窗 ─────────── */
+
+/* 悬窗天空的渐变（3D 不可用时的降级底色） */
+@utility sky-gradient {
+  background: linear-gradient(180deg, var(--sky-a) 0%, var(--sky-b) 52%, var(--sky-c) 100%);
+  transition: background 2.4s var(--ease);
+}
+
+/* CSS 星点层（3D 降级时用） */
+@utility css-stars {
+  background-image:
+    radial-gradient(1px 1px at 24px 36px, #fff, transparent),
+    radial-gradient(1px 1px at 92px 148px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 210px 72px, #cfe8ff, transparent),
+    radial-gradient(1px 1px at 56px 220px, #fff, transparent),
+    radial-gradient(1px 1px at 168px 268px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 288px 190px, #fff, transparent);
+  background-size: 340px 340px;
+  opacity: var(--star-opacity);
+  animation: drift var(--star-duration) linear infinite;
+  transition: opacity 1.8s var(--ease);
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-340px, -340px, 0);
+  }
+}
+
+/* ★ 星云光斑 —— 两层大范围径向渐变，给画面喂「深空彩色气体」 */
+@utility nebula-wash {
+  background:
+    radial-gradient(
+      42% 38% at 18% 22%,
+      color-mix(in srgb, var(--nebula-a) 70%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      36% 32% at 78% 68%,
+      color-mix(in srgb, var(--nebula-b) 65%, transparent) 0%,
+      transparent 72%
+    );
+  opacity: calc(var(--nebula-strength) * 0.52);
+  filter: blur(38px);
+  transition: opacity 2.4s var(--ease);
+  animation: nebula-breathe 34s var(--ease) infinite alternate;
+}
+
+@keyframes nebula-breathe {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.12) translate3d(-1.5%, 1.2%, 0);
+  }
+}
+
+/* ★ 动态光粒子层 —— 用于 UI 面板上的漂浮光尘 */
+@utility dust-field {
+  background-image:
+    radial-gradient(1.2px 1.2px at 12% 18%, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 34% 62%, var(--accent-dim), transparent),
+    radial-gradient(1.6px 1.6px at 58% 28%, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(1px 1px at 76% 74%, var(--accent-dim), transparent),
+    radial-gradient(1.3px 1.3px at 88% 42%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 46% 88%, rgba(255, 255, 255, 0.6), transparent);
+  background-size: 520px 520px;
+  opacity: calc(var(--dust-density) * 0.85);
+  animation: dust-rise var(--dust-duration, 58s) linear infinite;
+  transition: opacity 2s var(--ease);
+}
+
+@keyframes dust-rise {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -260px -520px;
+  }
+}
+
+/* ★ 扫描线 —— 极淡的横向条纹，科幻控制台质感 */
+@utility scanlines {
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.035) 0px,
+    rgba(255, 255, 255, 0.035) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.5;
+}
+
+/* ★ 悬窗边框光晕 —— 三层内阴影做出「厚玻璃舷窗」 */
+@utility viewport-frame {
+  box-shadow:
+    inset 0 0 90px rgba(0, 0, 0, 0.72),
+    inset 0 0 26px color-mix(in srgb, var(--color-accent) 12%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ★ 警示脉冲 —— 异常状态下整个画面轻微呼吸 */
+@utility alert-breath {
+  animation: alert-breath-key 3.4s ease-in-out infinite;
+}
+
+@keyframes alert-breath-key {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: calc(var(--alert-pulse) * 0.5);
+  }
+}
+
+/* ★ 陶瓷白高光扫过 —— 给陶瓷仪表块加一道缓慢掠过的高光 */
+@utility ceramic-sheen {
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 42%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.85) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+    animation: sheen-sweep 7.5s var(--ease) infinite;
+  }
+}
+
+@keyframes sheen-sweep {
+  0% {
+    transform: translateX(-160%) skewX(-14deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  38% {
+    transform: translateX(340%) skewX(-14deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(340%) skewX(-14deg);
+    opacity: 0;
+  }
+}
+
+/* ─────────── 通用动效 ─────────── */
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 滚动条统一风格 */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
